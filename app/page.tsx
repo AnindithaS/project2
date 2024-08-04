@@ -4,9 +4,15 @@ import { firestore } from '@/firebase';
 import { Box, Modal, Typography, Stack, TextField, Button } from '@mui/material';
 import { collection, deleteDoc, doc, query, getDocs, getDoc, setDoc } from 'firebase/firestore';
 
+// Define the InventoryItem interface
+interface InventoryItem {
+  id: string;
+  quantity: number;
+}
+
 export default function Home() {
-  const [inventory, setInventory] = useState([]);
-  const [filteredInventory, setFilteredInventory] = useState([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,11 +21,11 @@ export default function Home() {
     try {
       const snapshot = query(collection(firestore, 'inventory'));
       const docs = await getDocs(snapshot);
-      const inventoryList = [];
+      const inventoryList: InventoryItem[] = []; // Explicitly type the array
       docs.forEach((doc) => {
         inventoryList.push({
-          id: doc.id, // Use id as item name
-          ...doc.data(),
+          id: doc.id,
+          ...(doc.data() as InventoryItem),
         });
       });
       setInventory(inventoryList);
@@ -29,12 +35,12 @@ export default function Home() {
     }
   };
 
-  const addItem = async (item) => {
+  const addItem = async (item: string) => {
     const docRef = doc(collection(firestore, 'inventory'), item);
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
-      const { quantity } = docSnap.data();
+      const { quantity } = docSnap.data() as InventoryItem;
       await setDoc(docRef, { quantity: quantity + 1 }, { merge: true });
     } else {
       await setDoc(docRef, { quantity: 1 });
@@ -42,11 +48,11 @@ export default function Home() {
     await updateInventory();
   };
 
-  const removeItem = async (item) => {
+  const removeItem = async (item: string) => {
     const docRef = doc(collection(firestore, 'inventory'), item);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      const { quantity } = docSnap.data();
+      const { quantity } = docSnap.data() as InventoryItem;
       if (quantity === 1) {
         await deleteDoc(docRef);
       } else {
